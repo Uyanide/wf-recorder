@@ -2,81 +2,30 @@
 
 wf-recorder is a utility program for screen recording of `wlroots`-based compositors (more specifically, those that support `wlr-screencopy-v1` and `xdg-output`). Its dependencies are `ffmpeg`, `wayland-client` and `wayland-protocols`.
 
-# installation
+# Installation
+
+The following distributions are known to have packages:
 
 [comment]: <> (List ordered alphabetically)
 
-## Alpine Linux
-
-wf-recorder is available in the community repositories:
-```
-apk add wf-recorder
-```
-
-## Arch Linux
-
-Arch users can install wf-recorder from the Community repo.
-```
-pacman -S wf-recorder
-```
-
-## Artix Linux
-
-Artix users can install wf-recorder from the official repos
-```
-pacman -S wf-recorder
-```
-
-## Debian GNU/Linux
-
-Debian users can install wf-recorder from official repos
-```
-apt install wf-recorder
-```
-
-## Fedora Linux
-
-Fedora users can install wf-recorder from the official repos
-```
-sudo dnf install wf-recorder
-```
-
-## Gentoo Linux
-
-Gentoo users can install wf-recorder from the official (`::gentoo`) repository.
-
-## NixOS / Nix
-
-Users of the Nix package manager can add the `wf-recorder` package to their system configurations, or use `nix-shell` / `nix shell` / `nix run`:
-
-```
-nix-shell -p wf-recorder
-# OR
-nix shell nixpkgs#wf-recorder
-# OR
-nix run nixpkgs#wf-recorder
-```
-
-## Void Linux
-
-Void users can install wf-recorder from the official repos
-```
-xbps-install -S wf-recorder
-```
-
+| Distribution | Installation                  |
+| ------------ | ----------------------------- |
+| Alpine       | ```apk add wf-recorder```     |
+| Arch / Artix | ```pacman -S wf-recorder```   |
+| Debian       | ```apt install wf-recorder``` |
+| Fedora       | ```dnf install wf-recorder``` |
+| Gentoo       | Available in the official `::gentoo` repository |
+| NixOS / Nix  | Add `wf-recoder` to configuration or run any of: `nix-shell -p wf-recorder`, `nix shell nixpkgs#wfrecorder`, `nix run nixpkgs#wf-recorder` |
+| Void         | ```xbps-install -S wf-recorder``` |
 
 ## From Source
 ### Install Dependencies
 
-#### Ubuntu
-```
-sudo apt install g++ meson libavutil-dev libavcodec-dev libavformat-dev libswscale-dev libpulse-dev
-```
-
-#### Fedora
-```
-$ sudo dnf install gcc-c++ meson wayland-devel wayland-protocols-devel ffmpeg-free-devel pulseaudio-libs-devel
-```
+| Distribution | Install dependencies packages |
+| ------------ | --------------------- |
+| Ubuntu       | ```sudo apt install g++ meson libavutil-dev libavcodec-dev libavformat-dev libswscale-dev libpulse-dev``` |
+| Fedora       | ```sudo dnf install gcc-c++ meson wayland-devel wayland-protocols-devel ffmpeg-free-devel pulseaudio-libs-devel``` |
+| Void         | ```sudo xbps-install -S meson ninja gcc pkg-config scdoc wayland-devel wayland-protocols wayland-devel libgbm-devel libdrm-devel ffmpeg6-devel x264-devel pulseaudio-devel pipewire-devel``` |
 
 ### Download & Build
 ```
