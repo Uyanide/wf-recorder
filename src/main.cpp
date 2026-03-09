@@ -965,6 +965,9 @@ Use Ctrl+C to stop.)");
   -B. --buffrate            This option is used to specify the buffers expected framerate. this 
                             may help when encoders are expecting specific or limited framerate.
 
+  -H, --history             Keep history of the last N seconds of frames in memory.
+                            Frames are dumped to file only when recording is stopped (e.g. via Ctrl+C).
+
   --audio-backend           Specifies the audio backend among the available backends, for ex.
                             --audio-backend=pipewire
   
@@ -1121,6 +1124,7 @@ int main(int argc, char *argv[])
         { "help",              no_argument,       NULL, 'h' },
         { "bframes",           required_argument, NULL, 'b' },
         { "buffrate",          required_argument, NULL, 'B' },
+        { "history",           required_argument, NULL, 'H' },
         { "version",           no_argument,       NULL, 'v' },
         { "no-damage",         no_argument,       NULL, 'D' },
         { "overwrite",         no_argument,       NULL, 'y' },
@@ -1129,7 +1133,7 @@ int main(int argc, char *argv[])
     };
 
     int c, i;
-    while((c = getopt_long(argc, argv, "o:f:m:g:c:p:r:x:C:P:R:X:d:b:B:la::hvDF:yL", opts, &i)) != -1)
+    while((c = getopt_long(argc, argv, "o:f:m:g:c:p:r:x:C:P:R:X:d:b:B:H:la::hvDF:yL", opts, &i)) != -1)
     {
         switch(c)
         {
@@ -1205,6 +1209,10 @@ int main(int argc, char *argv[])
 
             case 'h':
                 help();
+                break;
+
+            case 'H':
+                params.history_seconds = std::stoi(optarg);
                 break;
 
             case 'p':

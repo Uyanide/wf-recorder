@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <deque>
 #include <atomic>
 #include <wayland-client-protocol.h>
 #include "config.h"
@@ -76,6 +77,7 @@ struct FrameWriterParams
     bool enable_ffmpeg_debug_output;
 
     int bframes;
+    int history_seconds = 0;
 
     std::atomic<bool>& write_aborted_flag;
     FrameWriterParams(std::atomic<bool>& flag): write_aborted_flag(flag) {}
@@ -123,8 +125,11 @@ class FrameWriter
     void finish_frame(AVCodecContext *enc_ctx, AVPacket& pkt);
     bool push_frame(AVFrame *frame, int64_t usec);
 
+    std::deque<AVPacket*> history_queue;
+
   public:
     FrameWriter(const FrameWriterParams& params);
+
     bool add_frame(const uint8_t* pixels, int64_t usec, bool y_invert);
     bool add_frame(struct gbm_bo *bo, int64_t usec, bool y_invert);
 

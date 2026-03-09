@@ -1004,9 +1004,43 @@ void FrameWriter::finish_frame(AVCodecContext *enc_ctx, AVPacket& pkt)
         pending_mutex.unlock();
     }
 #endif
-    if (av_interleaved_write_frame(fmtCtx, &pkt) != 0) {
-        params.write_aborted_flag = true;
+    if (params.history_seconds > 0) {
+        AVPacket *queued_pkt = av_packet_alloc();
+        av_packet_ref(queued_pkt, &pkt);
+        history_queue.push_back(queued_pkt);
+
+        AVStream *cur_st = fmtCtx->streams[queued_pkt->stream_index];
+        double cur_sec = (queued_pkt->dts != AV_NOPTS_VALUE ? queued_pkt->dts : queued_pkt->pts) * av_q2d(cur_st->time_base);
+        double limit_sec = cur_sec - params.history_seconds;
+
+        int drop_until = -1;
+        for (int i = 0; i < (int)history_queue.size(); ++i) {
+            AVPacket *p = history_queue[i];
+            AVStream *st = fmtCtx->streams[p->stream_index];
+            if (st->codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
+                double p_sec = (p->dts != AV_NOPTS_VALUE ? p->dts : p->pts) * av_q2d(st->time_base);
+                if (p_sec <= limit_sec && (p->flags & AV_PKT_FLAG_KEY)) {
+                    drop_until = i;
+                } else if (p_sec > limit_sec) {
+                    break;
+                }
+            }
+        }
+
+        if (drop_until > 0) {
+            for (int i = 0; i < drop_until; ++i) {
+                AVPacket *p = history_queue.front();
+                av_packet_unref(p);
+                av_packet_free(&p);
+                history_queue.pop_front();
+            }
+        }
+    } else {
+        if (av_interleaved_write_frame(fmtCtx, &pkt) != 0) {
+            params.write_aborted_flag = true;
+        }
     }
+
     av_packet_unref(&pkt);
 #ifdef HAVE_AUDIO
     if (params.enable_audio)
@@ -1026,6 +1060,35 @@ FrameWriter::~FrameWriter()
         encode(audioCodecCtx, NULL, pkt);
     }
 #endif
+
+    // Flush history before exiting
+    if (params.history_seconds > 0) {
+        if (!history_queue.empty()) {
+            AVPacket *first_pkt = history_queue.front();
+            AVStream *first_st = fmtCtx->streams[first_pkt->stream_index];
+            int64_t base_ts = first_pkt->dts != AV_NOPTS_VALUE ? first_pkt->dts : first_pkt->pts;
+
+            for (AVPacket *p : history_queue) {
+                AVStream *st = fmtCtx->streams[p->stream_index];
+                int64_t offset = av_rescale_q(base_ts, first_st->time_base, st->time_base);
+
+                if (p->dts != AV_NOPTS_VALUE) {
+                    p->dts -= offset;
+                }
+                if (p->pts != AV_NOPTS_VALUE) {
+                    p->pts -= offset;
+                }
+
+                if (av_interleaved_write_frame(fmtCtx, p) != 0) {
+                    params.write_aborted_flag = true;
+                }
+                av_packet_unref(p);
+                av_packet_free(&p);
+            }
+            history_queue.clear();
+        }
+    }
+
     // Writing the end of the file.
     av_write_trailer(fmtCtx);
 
