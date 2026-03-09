@@ -1062,23 +1062,21 @@ FrameWriter::~FrameWriter()
 #endif
 
     // Flush history before exiting
+    bool should_write_trailer = true;
     if (params.history_seconds > 0) {
-        if (!history_queue.empty()) {
+        if (dump_history_requested && !history_queue.empty()) {
             AVPacket *first_pkt = history_queue.front();
             AVStream *first_st = fmtCtx->streams[first_pkt->stream_index];
             int64_t base_ts = first_pkt->dts != AV_NOPTS_VALUE ? first_pkt->dts : first_pkt->pts;
-
             for (AVPacket *p : history_queue) {
                 AVStream *st = fmtCtx->streams[p->stream_index];
                 int64_t offset = av_rescale_q(base_ts, first_st->time_base, st->time_base);
-
                 if (p->dts != AV_NOPTS_VALUE) {
                     p->dts -= offset;
                 }
                 if (p->pts != AV_NOPTS_VALUE) {
                     p->pts -= offset;
                 }
-
                 if (av_interleaved_write_frame(fmtCtx, p) != 0) {
                     params.write_aborted_flag = true;
                 }
@@ -1086,15 +1084,26 @@ FrameWriter::~FrameWriter()
                 av_packet_free(&p);
             }
             history_queue.clear();
+        } else if (!dump_history_requested) {
+            for (AVPacket *p : history_queue) {
+                av_packet_unref(p);
+                av_packet_free(&p);
+            }
+            history_queue.clear();
+            should_write_trailer = false;
         }
     }
 
     // Writing the end of the file.
-    av_write_trailer(fmtCtx);
+    if (should_write_trailer) av_write_trailer(fmtCtx);
 
     // Closing the file.
     if (outputFmt && (!(outputFmt->flags & AVFMT_NOFILE)))
         avio_closep(&fmtCtx->pb);
+
+    if (params.history_seconds > 0 && !dump_history_requested) {
+        remove(params.file.c_str());
+    }
 
     // Freeing all the allocated memory:
     avcodec_free_context(&videoCodecCtx);

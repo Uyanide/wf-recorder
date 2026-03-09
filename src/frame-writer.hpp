@@ -126,8 +126,11 @@ class FrameWriter
     bool push_frame(AVFrame *frame, int64_t usec);
 
     std::deque<AVPacket*> history_queue;
+    std::atomic<bool> dump_history_requested{false};
 
   public:
+    void dump_history() { dump_history_requested = true; }
+
     FrameWriter(const FrameWriterParams& params);
 
     bool add_frame(const uint8_t* pixels, int64_t usec, bool y_invert);

@@ -738,6 +738,14 @@ void handle_graceful_termination(int)
     exit_main_loop = true;
 }
 
+void handle_sigusr1(int)
+{
+    if (frame_writer) {
+        frame_writer->dump_history();
+    }
+    exit_main_loop = true;
+}
+
 static bool user_specified_overwrite(std::string filename)
 {
     struct stat buffer;   
@@ -966,7 +974,7 @@ Use Ctrl+C to stop.)");
                             may help when encoders are expecting specific or limited framerate.
 
   -H, --history             Keep history of the last N seconds of frames in memory.
-                            Frames are dumped to file only when recording is stopped (e.g. via Ctrl+C).
+                            Frames are dumped to file only when receiving SIGUSR1 signal.
 
   --audio-backend           Specifies the audio backend among the available backends, for ex.
                             --audio-backend=pipewire
@@ -1390,6 +1398,8 @@ int main(int argc, char *argv[])
     {
         signal(signo, handle_graceful_termination);
     }
+    
+    signal(SIGUSR1, handle_sigusr1);
 
     while(!exit_main_loop)
     {
