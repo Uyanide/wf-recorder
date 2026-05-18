@@ -992,6 +992,8 @@ void FrameWriter::finish_frame(AVCodecContext *enc_ctx, AVPacket& pkt)
     {
         av_packet_rescale_ts(&pkt, videoCodecCtx->time_base, videoStream->time_base);
         pkt.stream_index = videoStream->index;
+        if (pkt.duration == 0 && videoCodecCtx->framerate.num > 0)
+            pkt.duration = av_rescale_q(1, av_inv_q(videoCodecCtx->framerate), videoStream->time_base);
     }
 #ifdef HAVE_AUDIO
     else
