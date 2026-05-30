@@ -922,7 +922,8 @@ Use Ctrl+C to stop.)");
   
   -r, --framerate           Changes framerate to constant framerate with a given value.
   
-  -d, --device              Selects the device to use when encoding the video
+  -d, --device              Selects the device to use when encoding the video.
+                            Only applies to VA-API codecs.
                             Some drivers report support for rgb0 data for vaapi input but
                             really only support yuv.
 

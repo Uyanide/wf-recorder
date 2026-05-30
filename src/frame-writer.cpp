@@ -33,6 +33,13 @@ static FFmpegInitialize ffmpegInitialize;
 
 void FrameWriter::init_hw_accel()
 {
+    // --device only applies to VA-API encoding.
+    if (params.codec.find("vaapi") == std::string::npos)
+    {
+        std::cerr << "Ignoring --device: it only applies to VA-API codecs" << std::endl;
+        return;
+    }
+
     int ret = av_hwdevice_ctx_create(&this->hw_device_context,
         av_hwdevice_find_type_by_name("vaapi"), params.hw_device.c_str(), NULL, 0);
 
